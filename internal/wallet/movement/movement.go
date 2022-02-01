@@ -38,9 +38,9 @@ type Repository interface {
 
 type Movement struct {
 	ID           int64   `json:"id"`
-	Type         string  `json:"type" binding:"required"`
-	Amount       float64 `json:"amount" binding:"required"`
-	CurrencyName string  `json:"currencyname" binding:"required"`
+	Type         string  `json:"type" binding:"required,oneof=deposit extract"`
+	Amount       float64 `json:"amount" binding:"required,gte=0"`
+	CurrencyName string  `json:"currencyname" binding:"required,oneof=usdt btc ars"`
 	UserID       int64   `json:"userid" binding:"required"`
 	TotalAmount  float64 `json:"totalamount"`
 }

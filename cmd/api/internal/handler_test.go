@@ -126,46 +126,6 @@ func Test_Handler_API_createMovement(t *testing.T) {
 	}
 }
 
-func Test_Handler_API_searchMovement(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	userResponse := user.User{
-		ID:        1,
-		FirstName: "maria",
-		LastName:  "garcia",
-		Alias:     "mariagarcia",
-		Email:     "@gmail",
-	}
-
-	tt := []struct {
-		TestName       string
-		ExpectedStatus int
-		Error          error
-		UserReponse    user.User
-	}{
-		{"Ok", http.StatusOK, nil, userResponse},
-		{"ErrorUserNotFound", http.StatusNotFound, user.ErrorUserNotFound, user.User{}},
-		{"InternalServerError", http.StatusInternalServerError, errors.New("fail"), user.User{}},
-	}
-
-	for _, tc := range tt {
-		// When
-		service := &serviceMock{}
-
-		service.On("GetUser").Return(tc.UserReponse, tc.Error)
-
-		rr := httptest.NewRecorder()
-		router := gin.Default()
-		API(router, service)
-
-		request, err := http.NewRequest(http.MethodGet, "/users/1", nil)
-		assert.NoError(t, err)
-
-		router.ServeHTTP(rr, request)
-		// Then
-		require.Equal(t, tc.ExpectedStatus, rr.Code, "%s failed. Response: %v", tc.TestName, rr.Code)
-	}
-}
-
 type serviceMock struct {
 	mock.Mock
 }

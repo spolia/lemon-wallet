@@ -26,10 +26,11 @@ func (r repository) Save(ctx context.Context, movement Movement) (int64, error) 
 	query := fmt.Sprintf("INSERT INTO %s(mov_type,currency_name,tx_amount,user_id)VALUES (?,?,?,?);", table)
 	result, err := r.db.ExecContext(ctx, query, movement.Type, movement.CurrencyName, movement.Amount, movement.UserID)
 	if err != nil {
+		// when tx_amount - total_amount is less than 0
 		if err.(*mysql.MySQLError).Number == 1264 {
 			return 0, ErrorInsufficientBalance
 		}
-
+		// wrong type
 		if err.(*mysql.MySQLError).Number == 1265 {
 			return 0, ErrorWrongOperation
 		}
