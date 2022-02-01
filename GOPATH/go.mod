@@ -1,1 +1,0 @@
-module "github.com/spolia/lemon-wallet/GOPATH"
