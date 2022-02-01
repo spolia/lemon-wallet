@@ -8,19 +8,16 @@ import (
 	"github.com/spolia/lemon-wallet/internal/wallet/user"
 )
 
-type UserService interface {
-	Create(ctx context.Context, name, lastName, alias, email string) error
-	Get(ctx context.Context, id int64) (user.User, error)
+type Service interface {
+	CreateUser(ctx context.Context, name, lastName, alias, email string) (int64, error)
+	GetUser(ctx context.Context, id int64) (user.User, error)
+	CreateMovement(ctx context.Context, movement movement.Movement) (int64, error)
+	SearchMovement(ctx context.Context, userID int64, limit, offset uint64, movType, currencyName string) ([]movement.Row, error)
 }
 
-type MovementService interface {
-	Create(ctx context.Context, movement movement.Movement) (int64, error)
-	Search(ctx context.Context, limit, offset uint64, movType, currencyName string, userID int64) ([]movement.Row, error)
-}
-
-func API(router *gin.Engine, userService UserService, movementService MovementService) {
-	router.POST("/users", createUser(userService))
-	router.GET("/users/:id", getUser(userService))
-	router.POST("/movements", createMovement(movementService))
-	router.GET("/movements/search", searchMovement(movementService))
+func API(router *gin.Engine, service Service) {
+	router.POST("/users", createUser(service))
+	router.GET("/users/:id", getUser(service))
+	router.POST("/movements", createMovement(service))
+	router.GET("/movements/search", searchMovement(service))
 }

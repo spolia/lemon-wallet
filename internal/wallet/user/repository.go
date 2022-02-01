@@ -3,7 +3,6 @@ package user
 import (
 	"context"
 	"database/sql"
-	"errors"
 
 	"github.com/go-sql-driver/mysql"
 )
@@ -16,12 +15,13 @@ func New(db *sql.DB) *repository {
 	return &repository{db: db}
 }
 
+// Save inserts a new user
 func (r repository) Save(ctx context.Context, firstName, lastName, alias, email string) (int64, error) {
-	result, err := r.db.Exec("INSERT INTO users(first_name,last_name,alias,email)VALUES (?,?,?,?);",
+	result, err := r.db.ExecContext(ctx, "INSERT INTO users(first_name,last_name,alias,email)VALUES (?,?,?,?);",
 		firstName, lastName, alias, email)
 	if err != nil {
-		if err.(*mysql.MySQLError).Number==1062{
-			return 0 , ErrorAlreadyExist
+		if err.(*mysql.MySQLError).Number == 1062 {
+			return 0, ErrorAlreadyExist
 		}
 		return 0, err
 	}
@@ -34,30 +34,27 @@ func (r repository) Save(ctx context.Context, firstName, lastName, alias, email 
 	return userID, nil
 }
 
+// Delete deletest an user
 func (r repository) Delete(ctx context.Context, id int64) error {
-	result, err := r.db.Exec("DELETE FROM users Where id = ?;", id)
+	result, err := r.db.ExecContext(ctx, "DELETE FROM users Where id = ?;", id)
 	if err != nil {
 		return err
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
+	if _, err = result.RowsAffected(); err != nil {
 		return err
-	}
-
-	if rowsAffected < 1 {
-		return errors.New("any row affected")
 	}
 
 	return nil
 }
 
+// Get returns a user
 func (r repository) Get(ctx context.Context, id int64) (User, error) {
-	rows, err := r.db.QueryContext(ctx, "SELECT * FROM users Where id = ?;",id)
+	rows, err := r.db.QueryContext(ctx, "SELECT * FROM users Where id = ?;", id)
 	if err != nil {
 		return User{}, err
 	}
-
+	//todo: check el next rows
 	var user User
 	if err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Alias, &user.Email); err != nil {
 		if err == sql.ErrNoRows {

@@ -15,12 +15,12 @@ type Repository interface {
 }
 
 type User struct {
-	ID              int64              `json: "id"`
-	FirstName       string             `json: "firstname" binding:"required"`
-	LastName        string             `json: "lastname" binding:"required"`
-	Alias           string             `json: "alias" binding:"required"`
-	Email           string             `json: "email" binding:"required"`
-	WalletStatement map[string]float64 `json: "walletstatement"`
+	ID              int64              `json:"id"`
+	FirstName       string             `json:"firstname" binding:"required"`
+	LastName        string             `json:"lastname" binding:"required"`
+	Alias           string             `json:"alias" binding:"required"`
+	Email           string             `json:"email" binding:"required"`
+	WalletStatement map[string]float64 `json:"walletstatement"`
 }
 
 /*

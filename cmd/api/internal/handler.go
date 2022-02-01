@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -11,14 +10,11 @@ import (
 )
 
 /*
-1-hacer el endpoint de search
-2-testeart todos los casos y meter comentarios
-3-agregar test en todos los niveles con testdata
 5-levantar con docker
 4-agregar readme
 
 */
-func createUser(userService UserService) gin.HandlerFunc {
+func createUser(service Service) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var userRequest user.User
 		if err := ctx.ShouldBindJSON(&userRequest); err != nil {
@@ -26,7 +22,8 @@ func createUser(userService UserService) gin.HandlerFunc {
 			return
 		}
 
-		if err := userService.Create(ctx, userRequest.FirstName, userRequest.LastName, userRequest.Alias, userRequest.Email); err != nil {
+		userID, err := service.CreateUser(ctx, userRequest.FirstName, userRequest.LastName, userRequest.Alias, userRequest.Email)
+		if err != nil {
 			if err == user.ErrorAlreadyExist {
 				ctx.JSON(http.StatusBadRequest, err.Error())
 				return
@@ -34,11 +31,11 @@ func createUser(userService UserService) gin.HandlerFunc {
 			ctx.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
-		ctx.JSON(http.StatusCreated, "ok")
+		ctx.JSON(http.StatusCreated, userID)
 	}
 }
 
-func getUser(userService UserService) gin.HandlerFunc {
+func getUser(service Service) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 		if err != nil {
@@ -46,7 +43,7 @@ func getUser(userService UserService) gin.HandlerFunc {
 			return
 		}
 
-		userResult, err := userService.Get(ctx, userID)
+		userResult, err := service.GetUser(ctx, userID)
 		if err != nil {
 			if err == user.ErrorUserNotFound {
 				ctx.JSON(http.StatusNotFound, err.Error())
@@ -61,7 +58,7 @@ func getUser(userService UserService) gin.HandlerFunc {
 	}
 }
 
-func createMovement(movementService MovementService) gin.HandlerFunc {
+func createMovement(service Service) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var movementRequest movement.Movement
 		if err := ctx.ShouldBindJSON(&movementRequest); err != nil {
@@ -69,7 +66,7 @@ func createMovement(movementService MovementService) gin.HandlerFunc {
 			return
 		}
 
-		movementID, err := movementService.Create(ctx, movementRequest)
+		movementID, err := service.CreateMovement(ctx, movementRequest)
 		if err != nil {
 			if err == movement.ErrorWrongCurrency || err == movement.ErrorWrongUser || err == movement.ErrorInsufficientBalance {
 				ctx.JSON(http.StatusBadRequest, err.Error())
@@ -84,24 +81,20 @@ func createMovement(movementService MovementService) gin.HandlerFunc {
 	}
 }
 
-func searchMovement(movementService MovementService) gin.HandlerFunc {
+func searchMovement(service Service) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		limit, _ := strconv.ParseUint(ctx.DefaultQuery("limit", "0"), 10, 64)
-		fmt.Print("limit", limit)
-		offset, _ := strconv.ParseUint(ctx.DefaultQuery("offset", "0"), 10, 0)
-		fmt.Print("offset", offset)
 		userID, err := strconv.ParseInt(ctx.Query("userid"), 10, 64)
-		fmt.Print("useridInt", userID)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
 
+		limit, _ := strconv.ParseUint(ctx.DefaultQuery("limit", "0"), 10, 64)
+		offset, _ := strconv.ParseUint(ctx.DefaultQuery("offset", "0"), 10, 0)
 		typeMov := ctx.Query("type")
-		fmt.Print("type", typeMov)
 		currency := ctx.Query("currencyname")
-		fmt.Print("currency", currency)
 		ctx.Query("currencyname")
+
 		var searchRequest = struct {
 			Limit        uint64
 			Offset       uint64
@@ -116,8 +109,8 @@ func searchMovement(movementService MovementService) gin.HandlerFunc {
 			UserID:       userID,
 		}
 
-		movementsResult, err := movementService.Search(ctx, searchRequest.Limit, searchRequest.Offset, searchRequest.Type,
-			searchRequest.CurrencyName, searchRequest.UserID)
+		movementsResult, err := service.SearchMovement(ctx, searchRequest.UserID, searchRequest.Limit, searchRequest.Offset, searchRequest.Type,
+			searchRequest.CurrencyName)
 		if err != nil {
 			if err == movement.ErrorNoMovements {
 				ctx.JSON(http.StatusNotFound, err.Error())

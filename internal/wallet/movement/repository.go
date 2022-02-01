@@ -16,19 +16,24 @@ func New(db *sql.DB) *repository {
 	return &repository{db: db}
 }
 
+// Save inserts a new movement in the database
 func (r repository) Save(ctx context.Context, movement Movement) (int64, error) {
 	var table string
-	fmt.Print(movement.CurrencyName)
 	if table = getCurrencyTable(movement.CurrencyName); table == "" {
 		return 0, ErrorWrongCurrency
 	}
 
 	query := fmt.Sprintf("INSERT INTO %s(mov_type,currency_name,tx_amount,user_id)VALUES (?,?,?,?);", table)
-	result, err := r.db.Exec(query, movement.Type, movement.CurrencyName, movement.Amount, movement.UserID)
+	result, err := r.db.ExecContext(ctx, query, movement.Type, movement.CurrencyName, movement.Amount, movement.UserID)
 	if err != nil {
 		if err.(*mysql.MySQLError).Number == 1264 {
 			return 0, ErrorInsufficientBalance
 		}
+
+		if err.(*mysql.MySQLError).Number == 1265 {
+			return 0, ErrorWrongOperation
+		}
+
 		if err.(*mysql.MySQLError).Number == 1048 {
 			return 0, ErrorWrongUser
 		}
@@ -44,38 +49,33 @@ func (r repository) Save(ctx context.Context, movement Movement) (int64, error) 
 	return movID, nil
 }
 
-// this insert is just for first insert
-func (r repository) InitInsert(ctx context.Context, movement Movement) error {
-	// todo: solve what happen if some error occurs, roll back the rows created
-	for _, v := range currencyTable {
+// InitSave saves movements for a new user
+func (r repository) InitSave(ctx context.Context, movement Movement) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for _, v := range movementTables {
 		query := fmt.Sprintf("INSERT INTO %s(mov_type,tx_amount,total_amount,user_id)VALUES (?,?,?,?);", v)
-		_, err := r.db.Exec(query, movement.Type, movement.Amount, movement.TotalAmount, movement.UserID)
-		if err != nil {
+
+		if _, err = tx.ExecContext(ctx, query, movement.Type, movement.Amount, movement.TotalAmount, movement.UserID);
+			err != nil {
 			return err
 		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (r repository) ListAll(ctx context.Context, id int64) ([]Movement, error) {
-	var movements []Movement
-	rows, err := r.db.Query("SELECT * FROM movements where id = ?;", id)
-	if err != nil {
-		return []Movement{}, err
-	}
-
-	err = rows.Scan(&movements)
-	if err != nil {
-		return []Movement{}, err
-	}
-
-	return movements, nil
-}
-
+// GetAccountExtract given an id returns the last movements for each currency
 func (r repository) GetAccountExtract(ctx context.Context, id int64) (AccountExtract, error) {
 	var accountExtract = make(AccountExtract, 0)
-	for k, v := range currencyTable {
+	for k, v := range movementTables {
 		var queryResult struct {
 			totalAmount float64
 		}
@@ -92,19 +92,19 @@ func (r repository) GetAccountExtract(ctx context.Context, id int64) (AccountExt
 	return accountExtract, nil
 }
 
-func (r repository) Search(ctx context.Context, limit, offset uint64, movType, currencyName string, userID int64) ([]Row, error) {
-	var currencyTables = make([]string, 0)
+// Search searches the movements for an user id applying different filters
+func (r repository) Search(ctx context.Context, userID int64, limit, offset uint64, movType, currencyName string) ([]Row, error) {
+	var tables = make([]string, 0)
 	if currencyName == "" {
-		for _, v := range currencyTable {
-			currencyTables = append(currencyTables, v)
+		for _, v := range movementTables {
+			tables = append(tables, v)
 		}
 	} else {
-		currencyTables = append(currencyTables, currencyTable[currencyName])
+		tables = append(tables, movementTables[currencyName])
 	}
 
 	var movements []Row
-	for _, v := range currencyTables {
-
+	for _, v := range tables {
 		sqlQuery := fmt.Sprintf("SELECT mov_type, currency_name, date_created, tx_amount, total_amount "+
 			"FROM %s WHERE user_id = ?", v)
 		if movType != "" {
@@ -114,7 +114,7 @@ func (r repository) Search(ctx context.Context, limit, offset uint64, movType, c
 		if limit > 0 {
 			sqlQuery = fmt.Sprintf("%s LIMIT %v OFFSET %v;", sqlQuery, limit, offset)
 		}
-		fmt.Print(sqlQuery)
+
 		rows, err := r.db.QueryContext(ctx, sqlQuery, userID)
 		if err != nil {
 			return []Row{}, err

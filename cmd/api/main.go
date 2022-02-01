@@ -16,7 +16,7 @@ import (
 func StarApplication() () {
 	log.Println("starting")
 	var err error
-	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s?%s", "root", "root", "127.0.0.1:3306", "wallet","parseTime=true")
+	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s?%s", "root", "root", "127.0.0.1:3306", "wallet", "parseTime=true")
 	db, err := sql.Open("mysql", dataSourceName)
 	if err != nil {
 		log.Fatal(err)
@@ -26,11 +26,11 @@ func StarApplication() () {
 		log.Fatal(err)
 	}
 
-	userService := wallet.NewUserService(user.New(db), movement.New(db))
-	movementService := wallet.NewMovementService(user.New(db), movement.New(db))
-	log.Println("database successfully configured")
+	service := wallet.New(user.New(db), movement.New(db))
+	log.Println("service successfully configured")
+
 	router := gin.Default()
-	internal.API(router, userService, movementService)
+	internal.API(router, service)
 
 	router.Run("localhost:8080")
 	log.Println("listening")
