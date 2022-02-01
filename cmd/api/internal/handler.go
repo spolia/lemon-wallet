@@ -11,8 +11,6 @@ import (
 
 /*
 5-levantar con docker
-4-agregar readme
-
 */
 func createUser(service Service) gin.HandlerFunc {
 	return func(ctx *gin.Context) {

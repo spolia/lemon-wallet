@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"database/sql"
@@ -13,7 +13,7 @@ import (
 	"github.com/spolia/lemon-wallet/internal/wallet/user"
 )
 
-func StarApplication() () {
+func main() () {
 	log.Println("starting")
 	var err error
 	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s?%s", "root", "root", "127.0.0.1:3306", "wallet", "parseTime=true")
