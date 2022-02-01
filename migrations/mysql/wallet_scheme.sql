@@ -18,7 +18,7 @@ CREATE TABLE `wallet`.`movements_btc` (
   `user_id` BIGINT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `user_id_idx` (`user_id` ASC),
-  CONSTRAINT `fku_user_id`
+  CONSTRAINT `fk_btc_user_id`
       FOREIGN KEY (`user_id`)
           REFERENCES `wallet`.`users` (`id`)
           ON DELETE CASCADE
@@ -34,7 +34,7 @@ CREATE TABLE `wallet`.`movements_usdt` (
   `user_id` BIGINT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `user_id_idx` (`user_id` ASC),
-  CONSTRAINT `fkusdt_user_id`
+  CONSTRAINT `fk_usdt_user_id`
       FOREIGN KEY (`user_id`)
           REFERENCES `wallet`.`users` (`id`)
           ON DELETE CASCADE
@@ -50,12 +50,17 @@ CREATE TABLE `wallet`.`movements_ars` (
    `user_id` BIGINT NOT NULL,
    PRIMARY KEY (`id`),
    INDEX `user_id_idx` (`user_id` ASC),
-   CONSTRAINT `fk_user_id`
+   CONSTRAINT `fk_ars_user_id`
        FOREIGN KEY (`user_id`)
            REFERENCES `wallet`.`users` (`id`)
            ON DELETE CASCADE
            ON UPDATE CASCADE);
 
+
+/*Triggers*/
+
+
+DROP TRIGGER IF EXISTS `wallet`.`movements_usdt_BEFORE_INSERT`;
 DELIMITER $$
 USE `wallet`$$
 CREATE DEFINER=`root`@`%` TRIGGER `wallet`.`movements_usdt_BEFORE_INSERT` BEFORE INSERT ON `movements_usdt` FOR EACH ROW
@@ -66,6 +71,44 @@ IF NEW.mov_type='deposit' THEN
 END IF;
 IF NEW.mov_type='extract' THEN
 		SET NEW.total_amount = (SELECT total_amount FROM movements_usdt WHERE id =(SELECT max(id) from movements_usdt WHERE user_id = NEW.user_id))
+        - NEW.tx_amount;
+END IF;
+END$$
+DELIMITER ;
+
+
+
+DROP TRIGGER IF EXISTS `wallet`.`movements_btc_BEFORE_INSERT`;
+
+DELIMITER $$
+USE `wallet`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `wallet`.`movements_btc_BEFORE_INSERT` BEFORE INSERT ON `movements_btc` FOR EACH ROW
+BEGIN
+IF NEW.mov_type='deposit' THEN
+		SET NEW.total_amount = NEW.tx_amount +
+		(SELECT total_amount FROM movements_btc WHERE id =(SELECT max(id) from movements_btc WHERE user_id = NEW.user_id));
+END IF;
+IF NEW.mov_type='extract' THEN
+		SET NEW.total_amount = (SELECT total_amount FROM movements_btc WHERE id =(SELECT max(id) from movements_btc WHERE user_id = NEW.user_id))
+        - NEW.tx_amount;
+END IF;
+END$$
+DELIMITER ;
+
+
+
+DROP TRIGGER IF EXISTS `wallet`.`movements_ars_BEFORE_INSERT`;
+
+DELIMITER $$
+USE `wallet`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `wallet`.`movements_ars_BEFORE_INSERT` BEFORE INSERT ON `movements_ars` FOR EACH ROW
+BEGIN
+IF NEW.mov_type='deposit' THEN
+		SET NEW.total_amount = NEW.tx_amount +
+		(SELECT total_amount FROM movements_ars WHERE id =(SELECT max(id) from movements_ars WHERE user_id = NEW.user_id));
+END IF;
+IF NEW.mov_type='extract' THEN
+		SET NEW.total_amount = (SELECT total_amount FROM movements_ars WHERE id =(SELECT max(id) from movements_ars WHERE user_id = NEW.user_id))
         - NEW.tx_amount;
 END IF;
 END$$
