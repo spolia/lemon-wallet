@@ -4,7 +4,7 @@
 
 ## Overview
 
-This project provides functionalities to manage _users_ and _movements_ in a wallet. It is entirely written in the Go
+This project provides functionalities to manage _users_ and _movements_ in a wallet. It is entirely written in Go
 language, with a package-oriented design and a mysql database.
 
 ## Endpoints
