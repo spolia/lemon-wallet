@@ -9,9 +9,6 @@ import (
 	"github.com/spolia/lemon-wallet/internal/wallet/user"
 )
 
-/*
-5-levantar con docker
-*/
 func createUser(service Service) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var userRequest user.User
@@ -91,7 +88,6 @@ func searchMovement(service Service) gin.HandlerFunc {
 		offset, _ := strconv.ParseUint(ctx.DefaultQuery("offset", "0"), 10, 0)
 		typeMov := ctx.Query("type")
 		currency := ctx.Query("currencyname")
-		ctx.Query("currencyname")
 
 		var searchRequest = struct {
 			Limit        uint64

@@ -110,7 +110,8 @@ func TestGet_Ok(t *testing.T) {
 
 	// When
 	mock.ExpectQuery("SELECT * FROM users Where id = ?;").
-		WithArgs(int64(1)).WillReturnRows(sqlmock.NewRows([]string{"alias"}).AddRow("alias"))
+		WithArgs(int64(1)).WillReturnRows(sqlmock.NewRows([]string{"id","first_name","last_name","alias","email"}).
+			AddRow(1,"maria","garcia","alias","@gmail"))
 
 	// then
 	userResponse, err := repository.Get(context.Background(), int64(1))

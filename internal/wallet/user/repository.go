@@ -50,13 +50,13 @@ func (r repository) Delete(ctx context.Context, id int64) error {
 
 // Get returns a user
 func (r repository) Get(ctx context.Context, id int64) (User, error) {
-	rows, err := r.db.QueryContext(ctx, "SELECT * FROM users Where id = ?;", id)
-	if err != nil {
-		return User{}, err
+	row := r.db.QueryRowContext(ctx, "SELECT * FROM users Where id = ?;", id)
+	if row.Err() != nil {
+		return User{}, row.Err()
 	}
-	//todo: check el next rows
+
 	var user User
-	if err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Alias, &user.Email); err != nil {
+	if err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Alias, &user.Email); err != nil {
 		if err == sql.ErrNoRows {
 			return User{}, ErrorUserNotFound
 		}

@@ -26,7 +26,7 @@ func Test_Handler_API_createUser(t *testing.T) {
 		Error              error
 	}{
 		{"Ok", "create_user_ok", http.StatusCreated, nil},
-		{"WrongFormat", "user_wrong_format", http.StatusBadRequest, nil},
+		{"WrongFormat", "create_user_wrong_format", http.StatusBadRequest, nil},
 		{"ErrorAlreadyExist", "create_user_ok", http.StatusBadRequest, user.ErrorAlreadyExist},
 		{"InternalServerError", "create_user_ok", http.StatusInternalServerError, errors.New("fail")},
 	}
@@ -99,7 +99,7 @@ func Test_Handler_API_createMovement(t *testing.T) {
 		Error              error
 	}{
 		{"Ok", "create_movement_ok", http.StatusCreated, nil},
-		{"WrongFormat", "movement_wrong_format", http.StatusBadRequest, nil},
+		{"WrongFormat", "create_movement_wrong_format", http.StatusBadRequest, nil},
 		{"ErrorWrongCurrency", "create_movement_ok", http.StatusBadRequest, movement.ErrorWrongCurrency},
 		{"ErrorInsufficientBalance", "create_movement_ok", http.StatusBadRequest, movement.ErrorInsufficientBalance},
 		{"InternalServerError", "create_movement_ok", http.StatusInternalServerError, errors.New("fail")},

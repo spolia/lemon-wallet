@@ -50,7 +50,7 @@ func (r repository) Save(ctx context.Context, movement Movement) (int64, error) 
 	return movID, nil
 }
 
-// InitSave saves movements for a new user
+// InitSave saves initials movements for a new user
 func (r repository) InitSave(ctx context.Context, movement Movement) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -81,7 +81,7 @@ func (r repository) GetAccountExtract(ctx context.Context, id int64) (AccountExt
 			totalAmount float64
 		}
 
-		row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT total_amount FROM %s WHERE date_created = (SELECT MAX(date_created)"+
+		row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT total_amount FROM %s WHERE date_created = (SELECT MAX(date_created) "+
 			"FROM %s WHERE user_id = ?)", v, v), id)
 		if err := row.Scan(&queryResult.totalAmount); err != nil {
 			return AccountExtract{}, err
@@ -93,17 +93,9 @@ func (r repository) GetAccountExtract(ctx context.Context, id int64) (AccountExt
 	return accountExtract, nil
 }
 
-// Search searches the movements for an user id applying different filters
+// Search searches the movements for an user applying different filters
 func (r repository) Search(ctx context.Context, userID int64, limit, offset uint64, movType, currencyName string) ([]Row, error) {
-	var tables = make([]string, 0)
-	if currencyName == "" {
-		for _, v := range movementTables {
-			tables = append(tables, v)
-		}
-	} else {
-		tables = append(tables, movementTables[currencyName])
-	}
-
+	var tables = getCurrenciesTables(currencyName)
 	var movements []Row
 	for _, v := range tables {
 		sqlQuery := fmt.Sprintf("SELECT mov_type, currency_name, date_created, tx_amount, total_amount "+
@@ -117,7 +109,7 @@ func (r repository) Search(ctx context.Context, userID int64, limit, offset uint
 		}
 
 		rows, err := r.db.QueryContext(ctx, sqlQuery, userID)
-		if err != nil {
+		if err != nil || rows.Err()!= nil{
 			return []Row{}, err
 		}
 

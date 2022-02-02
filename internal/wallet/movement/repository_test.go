@@ -3,6 +3,7 @@ package movement
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-sql-driver/mysql"
@@ -94,8 +95,8 @@ func TestInitSave_ok(t *testing.T) {
 	defer db.Close()
 
 	movement := Movement{
-		Type:         DepositMov,
-		UserID:       1,
+		Type:   DepositMov,
+		UserID: 1,
 	}
 	// When
 	mock.ExpectBegin()
@@ -117,4 +118,31 @@ func TestInitSave_ok(t *testing.T) {
 	// then
 	err = repository.InitSave(context.Background(), movement)
 	require.NoError(t, err)
+}
+
+func TestSearch_ok(t *testing.T) {
+	// Given
+	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	if err != nil {
+		require.NoError(t, err)
+	}
+	repository := New(db)
+	defer db.Close()
+
+	movement := Movement{
+		Type:         DepositMov,
+		UserID:       int64(1),
+		CurrencyName: ARS,
+	}
+	// When
+
+	mock.ExpectQuery("SELECT mov_type, currency_name, date_created, tx_amount, total_amount FROM movements_ars WHERE user_id = ? AND mov_type = 'deposit'").
+		WithArgs(movement.UserID).WillReturnRows(sqlmock.NewRows([]string{"mov_type", "currency_name", "date_created", "tx_amount", "total_amount"}).
+		AddRow("deposit", "ars", time.Now(), 200, 1000)).WillReturnRows(sqlmock.NewRows([]string{"mov_type", "currency_name", "date_created", "tx_amount", "total_amount"}).
+		AddRow("deposit", "ars", time.Now(), 300, 2000))
+
+	// then
+	rows, err := repository.Search(context.Background(), movement.UserID, 0, 0, movement.Type, movement.CurrencyName)
+	require.NoError(t, err)
+	require.True(t, true, len(rows) > 0)
 }

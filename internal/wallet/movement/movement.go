@@ -62,3 +62,17 @@ type Row struct {
 func getCurrencyTable(currency string) string {
 	return movementTables[currency]
 }
+
+func getCurrenciesTables(currency string) []string {
+	var tables = make([]string, 0)
+
+	if movementTables[currency] == "" {
+		for _, v := range movementTables {
+			tables = append(tables, v)
+		}
+	} else {
+		tables = append(tables, movementTables[currency])
+	}
+
+	return tables
+}
