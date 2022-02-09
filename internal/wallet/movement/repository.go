@@ -27,7 +27,7 @@ func (r repository) Save(ctx context.Context, movement Movement) (int64, error) 
 	result, err := r.db.ExecContext(ctx, query, movement.Type, movement.CurrencyName, movement.Amount, movement.UserID)
 	if err != nil {
 		// when tx_amount - total_amount is less than 0
-		if err.(*mysql.MySQLError).Number == 1264 {
+		if err.(*mysql.MySQLError).Number == 1264 || err.(*mysql.MySQLError).Number == 1690 {
 			return 0, ErrorInsufficientBalance
 		}
 		// wrong type
@@ -60,8 +60,7 @@ func (r repository) InitSave(ctx context.Context, movement Movement) error {
 	for _, v := range movementTables {
 		query := fmt.Sprintf("INSERT INTO %s(mov_type,tx_amount,total_amount,user_id)VALUES (?,?,?,?);", v)
 
-		if _, err = tx.ExecContext(ctx, query, movement.Type, movement.Amount, movement.TotalAmount, movement.UserID);
-			err != nil {
+		if _, err = tx.ExecContext(ctx, query, movement.Type, movement.Amount, movement.TotalAmount, movement.UserID); err != nil {
 			return err
 		}
 	}
@@ -109,7 +108,7 @@ func (r repository) Search(ctx context.Context, userID int64, limit, offset uint
 		}
 
 		rows, err := r.db.QueryContext(ctx, sqlQuery, userID)
-		if err != nil || rows.Err()!= nil{
+		if err != nil || rows.Err() != nil {
 			return []Row{}, err
 		}
 

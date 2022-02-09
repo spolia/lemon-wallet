@@ -1,5 +1,6 @@
+CREATE SCHEMA `wallet` ;
 CREATE TABLE `wallet`.`users` (
-  `id` INT NOT NULL AUTO_INCREMENT,
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
   `first_name` VARCHAR(45) NOT NULL,
   `last_name` VARCHAR(45) NOT NULL,
   `alias` VARCHAR(45) NOT NULL,
@@ -10,7 +11,7 @@ CREATE TABLE `wallet`.`users` (
 
 CREATE TABLE `wallet`.`movements_btc` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
-  `mov_type` ENUM("deposit", "extract") NOT NULL,
+  `mov_type` ENUM("deposit", "extract","init") NOT NULL,
   `currency_name` VARCHAR(20) NOT NULL DEFAULT 'BTC',
   `date_created` DATETIME NOT NULL DEFAULT current_timestamp,
   `tx_amount` DECIMAL(18,8) ZEROFILL NOT NULL,
@@ -26,7 +27,7 @@ CREATE TABLE `wallet`.`movements_btc` (
 
 CREATE TABLE `wallet`.`movements_usdt` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
-  `mov_type` ENUM("deposit", "extract") NOT NULL,
+  `mov_type` ENUM("deposit", "extract","init") NOT NULL,
   `currency_name` VARCHAR(20) NOT NULL DEFAULT 'USDT',
   `date_created` DATETIME NOT NULL DEFAULT current_timestamp,
   `tx_amount` DECIMAL(18,2) ZEROFILL NOT NULL,
@@ -63,7 +64,7 @@ CREATE TABLE `wallet`.`movements_ars` (
 DROP TRIGGER IF EXISTS `wallet`.`movements_usdt_BEFORE_INSERT`;
 DELIMITER $$
 USE `wallet`$$
-CREATE DEFINER=`root`@`%` TRIGGER `wallet`.`movements_usdt_BEFORE_INSERT` BEFORE INSERT ON `movements_usdt` FOR EACH ROW
+CREATE DEFINER = CURRENT_USER TRIGGER `wallet`.`movements_usdt_BEFORE_INSERT` BEFORE INSERT ON `movements_usdt` FOR EACH ROW
 BEGIN
 IF NEW.mov_type='deposit' THEN
 		SET NEW.total_amount = NEW.tx_amount +

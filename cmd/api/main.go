@@ -13,10 +13,12 @@ import (
 	"github.com/spolia/lemon-wallet/internal/wallet/user"
 )
 
-func main() () {
+func main() {
 	log.Println("starting")
 	var err error
-	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s?%s", "root", "root", "127.0.0.1:3306", "wallet", "parseTime=true")
+	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s?%s", "root", "rootroot", "127.0.0.1:3306", "wallet", "parseTime=true")
+	log.Println("datasource", dataSourceName)
+
 	db, err := sql.Open("mysql", dataSourceName)
 	if err != nil {
 		log.Fatal(err)

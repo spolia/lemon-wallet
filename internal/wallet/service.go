@@ -22,16 +22,18 @@ func New(userRepo user.Repository, movRepo movement.Repository) *Service {
 func (s *Service) CreateUser(ctx context.Context, name, lastName, alias, email string) (int64, error) {
 	userID, err := s.userRepo.Save(ctx, name, lastName, alias, email)
 	if err != nil {
+		println(err.Error())
 		return 0, err
 	}
 
 	// every time that a new user is saved is necessary init movements
 	err = s.movementRepo.InitSave(ctx, movement.Movement{
-		Type:   movement.DepositMov,
+		Type:   "init",
 		UserID: userID,
 	})
 	if err != nil {
 		// delete the created user
+		println("Delete", err.Error())
 		return 0, s.userRepo.Delete(ctx, userID)
 	}
 
